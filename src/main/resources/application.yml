@@ -1,0 +1,128 @@
+spring:
+  profiles:
+    group:
+      "local": "common, local"
+      "live":  "common, live"
+      "inner" : "common, inner"
+---
+spring:
+  config:
+    activate:
+      on-profile: "live"
+  data:
+    redis:
+      port: 6379
+      password: easysoft!23
+      host: 127.0.0.1
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:3306/magic_cafe_rider?useSSL=false&charset=utf8&useMysqlMetadata=true
+    username: gbkim
+    password: b2f0r2y0u
+    driverClassName: org.mariadb.jdbc.Driver
+
+file:
+  upload:
+    path: /home/gbkim/magic_cafe_rider/data
+    root: images
+    thumbnail: thumb
+    cs: cs
+    sign: road_sign
+    menu: menu
+
+server:
+  port: 48443
+  servlet:
+    session:
+      timeout: 1440m
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  ssl:
+    enabled: true
+    key-alias: mcrssl
+    key-store: /home/gbkim/magic_cafe_rider/server_ssl/bikecoder.p12
+    key-store-password: rhksqls
+    trust-store: /home/gbkim/magic_cafe_rider/server_ssl/bikecoder.trust.pkcs12
+    trust-store-password: rhksqls
+logging:
+  logback:
+    rollingpolicy:
+      max-history: 30
+      max-file-size: 100MB
+      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}-%i.log
+  file:
+    name: /home/gbkim/magic_cafe_rider/logs/magic_cafe_rider.log
+  pattern:
+    dateformat: yyyy-MM-dd HH:mm:ss.SSS,Asia/Seoul
+---
+spring:
+  config:
+    activate:
+      on-profile: "local"
+  data:
+    redis:
+      port: 46379
+      password: easysoft!23
+      host: easysoft.iptime.org
+  datasource:
+    url: jdbc:mariadb://easysoft.iptime.org:43306/magic_cafe_rider?useSSL=false&charset=utf8&useMysqlMetadata=true
+    username: gbkim
+    password: b2f0r2y0u
+    driverClassName: org.mariadb.jdbc.Driver
+
+
+file:
+  upload:
+    path: D:\servers\nginx_html\magic_cafe_rider
+    root: images
+    thumbnail: thumb
+    cs: cs
+    sign: RoadSign
+    menu: menu
+server:
+  port: 48080
+  servlet:
+    session:
+      timeout: 1440m
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "common"
+  jpa:
+    showSql: false
+    generateDdl: false
+    open-in-view: false
+    properties:
+      hibernate:
+        formatSql: true
+        dialect: org.hibernate.dialect.MySQL57Dialect
+        enable_lazy_load_no_trans: true
+    hibernate:
+      ddlAuto: update
+
+  flyway:
+    enabled: false #FlywayConfig 에서 따로 migrate 실행
+  thymeleaf:
+    prefix: classpath:/templates/
+    check-template-location: true
+    suffix: .html
+    mode: HTML
+    cache: false
+    template-resolver-order: 0
+  mvc:
+    view:
+      suffix: .html
+  devtools:
+    livereload:
+      enabled: true
+map:
+  kakaoKey: e7176f8855ee0b46941302c11bb5fe2c
+  kakaoRestKey: 9dafa04983d113996936290af1bd073b
+  kakaoRestApi: https://dapi.kakao.com/v2/local/search/address.json

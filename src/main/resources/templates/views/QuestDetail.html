@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"/>
+    <title>Title</title>
+    <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+
+    <script type="text/javascript"
+            th:src="|//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakakoKey}|">
+
+    </script>
+</head>
+<style>
+    #map {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dot {
+        overflow: hidden;
+        float: left;
+        width: 12px;
+        height: 12px;
+        background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/mini_circle.png');
+    }
+
+    .dotOverlay {
+        position: relative;
+        bottom: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        border-bottom: 2px solid #ddd;
+        float: left;
+        font-size: 12px;
+        padding: 5px;
+        background: #fff;
+    }
+
+    .dotOverlay:nth-of-type(n) {
+        border: 0;
+        box-shadow: 0px 1px 2px #888;
+    }
+
+    .number {
+        font-weight: bold;
+        color: #ee6152;
+    }
+
+    .dotOverlay:after {
+        content: '';
+        position: absolute;
+        margin-left: -6px;
+        left: 50%;
+        bottom: -8px;
+        width: 11px;
+        height: 8px;
+        background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white_small.png')
+    }
+
+    .distanceInfo {
+        position: relative;
+        top: 5px;
+        left: 5px;
+        list-style: none;
+        margin: 0;
+    }
+
+    .distanceInfo .label {
+        display: inline-block;
+        width: 50px;
+    }
+
+    .distanceInfo:after {
+        content: none;
+    }
+</style>
+<body style="padding:0; margin:0;">
+
+<div id="map"></div>
+
+</body>
+
+</html>
+
+<script th:inline="javascript">
+    let myShopLat = [[${myShopLat}]];
+    let myShopLng = [[${myShopLng}]];
+    let myId = [[${myId}]];
+    let myTitle = [[${myTitle}]];
+    let myLat = [[${myLat}]];
+    let myLng = [[${myLng}]];
+
+    const container = document.getElementById('map');
+    const options = {
+        center: new kakao.maps.LatLng(myShopLat, myShopLng),
+        level: 4
+    };
+    const map = new kakao.maps.Map(container, options);
+
+    const markerPosition = new kakao.maps.LatLng(myShopLat, myShopLng);
+
+    const marker = new kakao.maps.Marker({
+        position: markerPosition,
+    });
+    var markerImage = new kakao.maps.MarkerImage(
+        callHost + '/img/icon_loc.png',
+        new kakao.maps.Size(30, 35), new kakao.maps.Point(13, 34));
+    marker.setImage(markerImage);
+    marker.setTitle("가계");
+    marker.setMap(map);
+
+    let zindex = 0;
+
+    var bikerMarker = null;
+    if (myLat > 0 && myLng > 0) {
+        bikerMarker = setDeliverMarker(myLat, myLng, myTitle, myId);
+    }
+
+    if (bikerMarker != null) {
+        var polyline = new kakao.maps.Polyline({
+            map: map, // 선을 표시할 지도입니다
+            path: [], // 선을 구성하는 좌표 배열입니다 클릭한 위치를 넣어줍니다
+            strokeWeight: 3, // 선의 두께입니다
+            strokeColor: '#db4040', // 선의 색깔입니다
+            strokeOpacity: 1, // 선의 불투명도입니다 0에서 1 사이값이며 0에 가까울수록 투명합니다
+            strokeStyle: 'solid' // 선의 스타일입니다
+        });
+        polyline.setPath([bikerMarker.getPosition(), marker.getPosition()]);
+        var distance1 = Math.round(polyline.getLength());
+
+        console.log("dis1: " + distance1);
+
+        polyline.setPath([bikerMarker.getPosition(), marker.getPosition()]);
+
+        try {
+            CallDistance.postMessage(JSON.stringify({'d1': distance1}));
+        } catch (err) {
+            console.log(err);
+        }
+
+        map.panTo(bikerMarker.getPosition());
+    }
+
+</script>

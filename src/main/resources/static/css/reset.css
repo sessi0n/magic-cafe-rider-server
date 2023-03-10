@@ -1,0 +1,100 @@
+@charset "utf-8";
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+/* 텍스트 마우스 드래그시 색상 변경방법 */
+::selection,
+::-moz-selection {
+  background : #000;
+  color      : #fff;
+  text-shadow: none;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  color: #000;
+  /* `font` 속성 리셋 */
+  font-size                  : 16px;
+  /* 기본 글골 사이즈 정의 : 16x => 1rem */
+  font-weight                : 400;
+  line-height                : 1;
+  /* 글꼴 크기 조정을 방지 */
+  -webkit-text-size-adjust   : 100%;
+  /* 폰트를 부드럽게 */
+  -webkit-font-smoothing     : antialiased;
+  -moz-osx-font-smoothing    : grayscale;
+  /* 웹킷 마음대로 눌림 하이라이트 막음 */
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+ul, li {
+  list-style: none;
+}
+div {
+  display: block;
+}
+h1, h2, h3, h4, h5, h6, th {
+  font-weight: 700;
+}
+button, label {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+table {border-collapse:collapse; border-spacing:0; word-break:break-all;}
+table th {font-weight:normal;}
+select {
+  /* 기본 아이콘 없앰 */
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+}
+input:focus, select:focus {
+  outline: none;
+}
+img {
+  border: 0;
+  vertical-align: top;
+}
+em {
+  font-style: normal;
+}
+input::placeholder {
+  color: #a5a5a5;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+address {
+  font-style: normal;
+}
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #000;
+}
+input[type=text],
+input[type=number],
+input[type=email],
+input[type=url],
+input[type=tel],
+input[type=password]{-webkit-appearance:none;-moz-appearance:none;appearance:none;position:relative;display:block;line-height:1;;outline:none; border-radius: 0; -webkit-border-radius:0}

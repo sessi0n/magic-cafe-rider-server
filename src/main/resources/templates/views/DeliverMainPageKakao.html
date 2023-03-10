@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"/>
+    <title>Title</title>
+    <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+
+    <script type="text/javascript"
+            th:src="|//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakakoKey}|">
+
+    </script>
+</head>
+<style>
+    #map {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dot {
+        overflow: hidden;
+        float: left;
+        width: 12px;
+        height: 12px;
+        background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/mini_circle.png');
+    }
+
+    .dotOverlay {
+        position: relative;
+        bottom: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        border-bottom: 2px solid #ddd;
+        float: left;
+        font-size: 12px;
+        padding: 5px;
+        background: #fff;
+    }
+
+    .dotOverlay:nth-of-type(n) {
+        border: 0;
+        box-shadow: 0px 1px 2px #888;
+    }
+
+    .number {
+        font-weight: bold;
+        color: #ee6152;
+    }
+
+    .dotOverlay:after {
+        content: '';
+        position: absolute;
+        margin-left: -6px;
+        left: 50%;
+        bottom: -8px;
+        width: 11px;
+        height: 8px;
+        background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white_small.png')
+    }
+
+    .distanceInfo {
+        position: relative;
+        top: 5px;
+        left: 5px;
+        list-style: none;
+        margin: 0;
+    }
+
+    .distanceInfo .label {
+        display: inline-block;
+        width: 50px;
+    }
+
+    .distanceInfo:after {
+        content: none;
+    }
+
+    .customoverlay {
+        position: relative;
+        bottom: 35px;
+        left: 3px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        border-bottom: 2px solid #ddd;
+        float: left;
+    }
+
+    .customoverlay:nth-of-type(n) {
+        border: 0;
+        box-shadow: 0px 1px 2px #888;
+    }
+
+    /*.customoverlay a {*/
+    /*    display: block;*/
+    /*    text-decoration: none;*/
+    /*    color: #000;*/
+    /*    text-align: center;*/
+    /*    border-radius: 6px;*/
+    /*    font-size: 14px;*/
+    /*    font-weight: bold;*/
+    /*    overflow: hidden;*/
+    /*    background: #d95050;*/
+    /*    background: #d95050 url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/arrow_white.png) no-repeat right 14px center;*/
+    /*}*/
+
+    .customoverlay .title {
+        display: block;
+        text-align: center;
+        background: #fff;
+        margin-right: 15px;
+        padding: 5px 8px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    .customoverlay:after {
+        content: '';
+        position: absolute;
+        margin-left: -12px;
+        left: 50%;
+        bottom: -12px;
+        width: 22px;
+        height: 12px;
+        background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
+    }
+
+</style>
+<body style="padding:0; margin:0;">
+
+<div id="map"></div>
+
+</body>
+
+</html>
+
+<script th:inline="javascript">
+    let shopId = [[${shopId}]];
+    let userId = [[${userId}]];
+    let shopLat = [[${shopLat}]];
+    let shopLng = [[${shopLng}]];
+    let callHost = [[${callHost}]];
+    let rKey = [[${rKey}]];
+    let speed = [[${speed}]] ?? 10;
+    // console.log("speed : "+speed);
+    // console.log("setStoreMarker "+shopLat+":"+shopLng);
+    const container = document.getElementById('map');
+    const options = {
+        center: new kakao.maps.LatLng(shopLat, shopLng),
+        level: 4
+    };
+    const map = new kakao.maps.Map(container, options);
+
+    const markerPosition = new kakao.maps.LatLng(shopLat, shopLng);
+
+    const marker = new kakao.maps.Marker({
+        position: markerPosition,
+    });
+    var markerImage = new kakao.maps.MarkerImage(
+        '/img/icon_loc.png',
+        new kakao.maps.Size(30, 35), new kakao.maps.Point(13, 34));
+    marker.setImage(markerImage);
+    marker.setTitle("가계");
+    marker.setMap(map);
+
+    let owner;
+    let delivers = [];
+    let targets = [];
+    let overlays = [];
+    let needReturnOrders = [];
+    let zindex = 0;
+    let trackingId = -1;
+
+    function setTargetMarker(lat, lng, title, id, status, zIndex) {
+        // console.log("setStoreMarker " + lat + ":" + lng);
+        var markerTitle = '[ '+(zIndex+1)+' ] '+title;
+        var content = '<div class="customoverlay">' +
+            '  <a>' +
+            '    <span class="title">' + markerTitle + '</span>' +
+            '  </a>' +
+            '</div>';
+
+        var position = new kakao.maps.LatLng(lat, lng);
+        var marker = new kakao.maps.Marker({position: position, text: 'AAA'});
+        var imgUrl;
+        if (status === 'POINTED') {
+            imgUrl = '/img/icon_loc4.png';
+        }
+        else if (status === 'PICKED') {
+            imgUrl = '/img/icon_loc3.png';
+        }
+        else {
+            imgUrl = '/img/icon_loc7.png';
+        }
+
+        var markerImage = new kakao.maps.MarkerImage(
+            imgUrl,
+            new kakao.maps.Size(30, 35), new kakao.maps.Point(13, 34));
+        marker.setImage(markerImage);
+        marker.setMap(map);
+        marker.setZIndex(zindex++);
+        marker['target'] = 't' + id;
+        kakao.maps.event.addListener(marker, 'click', function () {
+            // 마커 위에 인포윈도우를 표시합니다
+            // console.log('id: ' + id);
+            MarkerClick.postMessage('' + id);
+        });
+
+        targets.push(marker);
+        addText(position, content, 't' + id);
+    }
+
+    function addText(pos, con, id) {
+        var customOverlay = new kakao.maps.CustomOverlay({
+            map: map,
+            position: pos,
+            content: con,
+            yAnchor: 1
+        });
+        customOverlay['id'] = id;
+
+        overlays.push(customOverlay);
+    }
+
+    function requestTargetControl(shopId, rKey) {
+        // console.log("shopId: "+ shopId);
+        if (shopId > 0) {
+            $.ajax({
+                url: "/sapi/deliver/before/order/" + userId,
+                type: 'GET',
+            }).done(function (data) {
+                // console.log(data);
+                for (let i = 0; i < data['shopOrderList'].length; i++) {
+                    let target = data['shopOrderList'][i];
+                    // console.log(target);
+                    setTargetMarker(target['lat'], target['lng'], target['webText'], target['idx'], target['status'], i);
+
+                }
+            });
+        }
+    }
+
+    function moveOwnerMarker(lat, lng) {
+        if (owner) {
+            const coords = new kakao.maps.LatLng(lat, lng);
+            // map.panTo(coords);
+            owner.setPosition(coords);
+            if (trackingId === '0') {
+                map.panTo(coords);
+            }
+        }
+        else {
+            var position = new kakao.maps.LatLng(lat, lng);
+            owner = new kakao.maps.Marker({position: position});
+            var markerImage = new kakao.maps.MarkerImage(
+                '/img/icon_loc2.png',
+                new kakao.maps.Size(30, 35), new kakao.maps.Point(13, 34));
+            owner.setImage(markerImage);
+            owner.setMap(map);
+            owner.setZIndex(zindex++);
+        }
+    }
+
+    try {
+        requestTargetControl(shopId, rKey);
+        CompletedPage.postMessage("Completed");
+    } catch (err) {
+        console.log(err);
+    }
+
+    /* App to Web start */
+    function selectShop() {
+        marker.setZIndex(zindex++);
+        map.panTo(marker.getPosition());
+    }
+
+    function selectTarget(id) {
+        id = 't' + id;
+        for (let i = 0; i < targets.length; i++) {
+            if (targets[i].target === id) {
+                targets[i].setZIndex(zindex++);
+                map.panTo(targets[i].getPosition());
+                break;
+            }
+        }
+    }
+
+    function selectOwner() {
+        if (owner) {
+            owner.setZIndex(zindex++);
+            map.panTo(owner.getPosition());
+        }
+    }
+
+    function setTrackingDeliver(id) {
+        trackingId = id;
+    }
+
+    function addNeedReturnTarget(lat, lng, title, id, status, zIndex) {
+        var markerTitle = '[ '+(zIndex+1)+' ] '+title;
+        var content = '<div class="customoverlay">' +
+            '  <a>' +
+            '    <span class="title">' + markerTitle + '</span>' +
+            '  </a>' +
+            '</div>';
+
+        var position = new kakao.maps.LatLng(lat, lng);
+        var marker = new kakao.maps.Marker({position: position, text: 'AAA'});
+        var imgUrl = '/img/icon_loc5.png';
+
+        var markerImage = new kakao.maps.MarkerImage(
+            imgUrl,
+            new kakao.maps.Size(30, 35), new kakao.maps.Point(13, 34));
+        marker.setImage(markerImage);
+        marker.setMap(map);
+        marker.setZIndex(zindex++);
+        marker['target'] = 'nr' + id;
+        kakao.maps.event.addListener(marker, 'click', function () {
+            // 마커 위에 인포윈도우를 표시합니다
+            // console.log('id: ' + id);
+            MarkerClick.postMessage('' + id);
+        });
+
+        needReturnOrders.push(marker);
+        addText(position, content, 'nr' + id);
+    }
+
+    function addNeedReturnOrders(nr_orders) {
+        if (needReturnOrders.length > 0) {
+            needReturnOrders.forEach(e => {
+                e.setMap(null);
+            });
+            overlays.forEach(o => {
+                if (o.id.substring(0, 2) === 'nr') {
+                    o.setMap(null);
+                }
+            });
+        }
+        needReturnOrders = [];
+        for (let i = 0; i < nr_orders.length; i++) {
+            var target = nr_orders[i];
+            addNeedReturnTarget(target['lat'], target['lng'], target['webText'], target['idx'], target['status'], i);
+        }
+    }
+
+    function selectReturnTarget(id) {
+        id = 'nr' + id;
+        for (let i = 0; i < needReturnOrders.length; i++) {
+            if (needReturnOrders[i].target === id) {
+                needReturnOrders[i].setZIndex(zindex++);
+                map.panTo(needReturnOrders[i].getPosition());
+                break;
+            }
+        }
+    }
+</script>
